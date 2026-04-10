@@ -245,6 +245,24 @@ Chạy 5 benchmark queries với `SentenceChunker(max_sentences_per_chunk=3)` tr
 
 ## 7. What I Learned (5 điểm — Demo)
 
+### Failure Analysis (Exercise 3.5)
+
+**Query thất bại:** Query 5 — *"Retrieval đóng vai trò gì trong trợ lý tri thức nội bộ?"*
+
+**Kết quả thực tế:** Top-1 trả về chunk *"Ví dụ, một công ty có thể gắn nhãn tài liệu theo phòng ban..."* (score 0.0421) — đây là ví dụ về metadata, không phải định nghĩa vai trò của retrieval.
+
+**Nguyên nhân:**
+- **Chunk coherence kém:** SentenceChunker gom 3 câu/chunk, câu định nghĩa vai trò retrieval bị gộp chung với các câu ví dụ không liên quan → embedding bị pha loãng, không đại diện đúng cho ý chính.
+- **Mock embedder không hiểu ngữ nghĩa:** Hash-based embedding không nhận ra "retrieval đóng vai trò" và "retrieval tìm ra những đoạn tài liệu phù hợp" là cùng ý.
+- **Filter `{"lang": "vi"}` quá rộng:** Lọc được đúng tài liệu nhưng không phân biệt được đoạn định nghĩa vs đoạn ví dụ trong cùng tài liệu.
+
+**Đề xuất cải thiện:**
+- Dùng `SentenceChunker(max_sentences_per_chunk=1)` hoặc `RecursiveChunker` để tách câu định nghĩa ra riêng, tránh gộp với ví dụ.
+- Thêm metadata `section` (ví dụ: "definition", "example", "conclusion") để filter chính xác hơn.
+- Dùng real embedder (all-MiniLM-L6-v2) — model này được train để hiểu paraphrase, sẽ match đúng câu hỏi với đoạn định nghĩa.
+
+---
+
 **Điều hay nhất tôi học được từ thành viên khác trong nhóm:**
 > Một thành viên dùng FixedSizeChunker với overlap lớn (100 ký tự) và cho thấy overlap giúp cải thiện retrieval cho các câu hỏi liên quan đến thông tin nằm ở ranh giới chunk. Điều này cho thấy tham số overlap quan trọng không kém gì chunk_size, và cần được tune theo đặc điểm của domain.
 
@@ -252,7 +270,7 @@ Chạy 5 benchmark queries với `SentenceChunker(max_sentences_per_chunk=3)` tr
 > Nhóm khác dùng metadata filtering theo `date` để ưu tiên tài liệu mới nhất khi trả lời câu hỏi về thông tin cập nhật. Đây là cách dùng metadata rất thực tế — không chỉ filter theo category mà còn theo thời gian, giúp tránh trả lời dựa trên thông tin lỗi thời.
 
 **Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
-> Tôi sẽ dùng real embedder (all-MiniLM-L6-v2) thay vì MockEmbedder để có kết quả retrieval phản ánh đúng ngữ nghĩa. Ngoài ra, tôi sẽ thêm metadata `section` để phân biệt các phần trong cùng một tài liệu (ví dụ: "introduction", "examples", "summary"), giúp filter chính xác hơn khi query yêu cầu loại thông tin cụ thể.
+> Tôi sẽ dùng real embedder (all-MiniLM-L6-v2) thay vì MockEmbedder để có kết quả retrieval phản ánh đúng ngữ nghĩa. Ngoài ra, tôi sẽ thêm metadata `section` để phân biệt các phần trong cùng một tài liệu (ví dụ: "definition", "example", "summary"), giúp filter chính xác hơn khi query yêu cầu loại thông tin cụ thể.
 
 ---
 
