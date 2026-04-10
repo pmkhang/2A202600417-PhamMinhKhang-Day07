@@ -1,7 +1,7 @@
 # Báo Cáo Lab 7: Embedding & Vector Store
 
 **Họ tên:** Phạm Minh Khang
-**Nhóm:** Nhóm 06 - E402
+**MSSV:** 2A202600417
 **Ngày:** 10/04/2026
 
 ---
